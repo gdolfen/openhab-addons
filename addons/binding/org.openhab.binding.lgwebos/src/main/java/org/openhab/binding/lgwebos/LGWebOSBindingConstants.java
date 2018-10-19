@@ -42,4 +42,11 @@ public class LGWebOSBindingConstants {
     public static final String CHANNEL_MEDIA_PLAYER = "mediaPlayer";
     public static final String CHANNEL_MEDIA_STOP = "mediaStop";
     public static final String CHANNEL_APP_LAUNCHER = "appLauncher";
+    public static final String CHANNEL_KEY_HOME = "keyHome";
+    public static final String CHANNEL_KEY_UP = "keyUp";
+    public static final String CHANNEL_KEY_DOWN = "keyDown";
+    public static final String CHANNEL_KEY_LEFT = "keyLeft";
+    public static final String CHANNEL_KEY_RIGHT = "keyRight";
+    public static final String CHANNEL_KEY_BACK = "keyBack";
+    public static final String CHANNEL_KEY_OK = "keyOk";
 }

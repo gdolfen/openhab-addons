@@ -17,6 +17,13 @@
 			<channel id="toast" typeId="toastType" />
 			<channel id="mediaPlayer" typeId="mediaPlayerType" />
 			<channel id="mediaStop" typeId="mediaStopType" />
+			<channel id="keyHome" typeId="keyHomeType" />
+			<channel id="keyLeft" typeId="keyLeftType" />
+			<channel id="keyRight" typeId="keyRightType" />
+			<channel id="keyUp" typeId="keyUpType" />
+			<channel id="keyDown" typeId="keyDownType" />
+			<channel id="keyBack" typeId="keyBackType" />
+			<channel id="keyOk" typeId="keyOkType" />
 			<channel id="appLauncher" typeId="appLauncherChannelType" />
 		</channels>
 
@@ -71,6 +78,41 @@
 		<label>Stop</label>
 		<description>Stop Playback</description>
 	</channel-type>
+    <channel-type id="keyHomeType">
+        <item-type>Switch</item-type>
+        <label>Home</label>
+        <description>Press home key</description>
+    </channel-type>
+    <channel-type id="keyLeftType">
+        <item-type>Switch</item-type>
+        <label>Left</label>
+        <description>Press left key</description>
+    </channel-type>
+    <channel-type id="keyRightType">
+        <item-type>Switch</item-type>
+        <label>Right</label>
+        <description>Press right key</description>
+    </channel-type>     
+    <channel-type id="keyUpType">
+        <item-type>Switch</item-type>
+        <label>Up</label>
+        <description>Press up key</description>
+    </channel-type>    
+    <channel-type id="keyDownType">
+        <item-type>Switch</item-type>
+        <label>Down</label>
+        <description>Press down key</description>
+    </channel-type>
+    <channel-type id="keyBackType">
+        <item-type>Switch</item-type>
+        <label>Back</label>
+        <description>Press back key</description>
+    </channel-type>      
+    <channel-type id="keyOkType">
+        <item-type>Switch</item-type>
+        <label>Ok</label>
+        <description>Press ok key</description>
+    </channel-type>      
 	<channel-type id="appLauncherChannelType">
 		<item-type>String</item-type>
 		<label>Application</label>
