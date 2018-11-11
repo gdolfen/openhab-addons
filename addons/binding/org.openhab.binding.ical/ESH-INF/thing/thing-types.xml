@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="ical"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Thing Type -->
+	<thing-type id="calendar">
+		<label>ICal Binding Thing</label>
+		<description>The thing represents an ICal-Calendar</description>
+
+		<channels>
+			<channel id="nextEvent" typeId="NextEventType" />
+			<channel id="nextEventDescription" typeId="NextEventDescriptionType" />
+			<channel id="nextEventNotificationDate" typeId="NextEventNotificationDateType" />
+			<channel id="nextEventStart" typeId="NextEventStartType" />
+			<channel id="nextEventEnd" typeId="NextEventEndType" />
+		</channels>
+
+		<config-description>
+            <parameter name="url" type="text" required="true">
+                <label>URL Address</label>
+                <description>The URL of the iCal-File</description>
+            </parameter>		
+            <parameter name="refreshInterval" type="integer" required="false">
+                <label>Refresh interval</label>
+                <description>Time for refreshing the iCal-File in seconds (default=86400s)</description>
+            </parameter>
+            <parameter name="nextEventNotificationDateOffset" type="integer" required="false">
+                <label>Event notification start offset</label>
+                <description>Offset for the next event notification date in seconds (default=86400s)</description>
+            </parameter>                        
+		</config-description>
+
+	</thing-type>
+
+	<!-- Channel Types -->
+    <channel-type id="NextEventType">
+        <item-type>String</item-type>
+        <label>Next event</label>
+        <description>Next event in the calendar</description>
+    </channel-type>
+    <channel-type id="NextEventDescriptionType">
+        <item-type>String</item-type>
+        <label>Next event description</label>
+        <description>Next event description in the calendar</description>
+    </channel-type>     
+    <channel-type id="NextEventNotificationDateType">
+        <item-type>DateTime</item-type>
+        <label>Next event notification date</label>
+        <description>Notification date for the next event in the calendar</description>
+    </channel-type>     	
+    <channel-type id="NextEventStartType">
+        <item-type>DateTime</item-type>
+        <label>Next event start</label>
+        <description>Next event start in the calendar</description>
+    </channel-type> 
+    <channel-type id="NextEventEndType">
+        <item-type>DateTime</item-type>
+        <label>Next event end</label>
+        <description>Next event end in the calendar</description>
+    </channel-type>         
+</thing:thing-descriptions>
