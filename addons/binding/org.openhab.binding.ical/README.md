@@ -38,5 +38,34 @@ The following thing configurations are available:
 
 ## Full Example
 
-_Provide a full usage example based on textual configuration files (*.things, *.items, *.sitemap)._
+You can configure the things through Paper UI. Thus, you can find your device ID by looking into discovery results in Paper UI.
 
+You could also specify an alternate ThingID using a .things file, specifying the url as a mandatory configuration parameter: 
+
+```
+ical:calendar:holiday [url="https://calendar.google.com/calendar/ical/de.german%23holiday%40group.v.calendar.google.com/public/basic.ics", refreshInterval=3600, nextEventNotificationDateOffset=86400] 
+```
+
+demo.items:
+
+```
+String   Holiday_NextEvent                 "Title [%s]"                                         <calendar>     { channel="ical:calendar:holiday:nextEvent" }
+String   Holiday_NextEventDescription      "Description [%s]"                                   <calendar>     { channel="ical:calendar:holiday:nextEventDescription" }
+DateTime Holiday_NextEventNotificationDate "Notification [%1$td.%1$tm.%1$tY, %1$tH:%1$tM Uhr]"  <calendar>     { channel="ical:calendar:holiday:nextEventNotificationDate" }
+DateTime Holiday_NextEventStart            "Start [%1$td.%1$tm.%1$tY, %1$tH:%1$tM Uhr]"         <calendar>     { channel="ical:calendar:holiday:nextEventStart" }
+DateTime Holiday_NextEventEnd              "End [%1$td.%1$tm.%1$tY, %1$tH:%1$tM Uhr]"           <calendar>     { channel="ical:calendar:holiday:nextEventEnd" }
+```
+
+demo.sitemap:
+
+```
+sitemap default label="Sitemap" {  
+    Frame {
+        Text item=Holiday_NextEvent
+        Text item=Holiday_NextEventDescription
+        Text item=Holiday_NextEventNotificationDate
+        Text item=Holiday_NextEventStart
+        Text item=Holiday_NextEventEnd
+    }
+}
+```
