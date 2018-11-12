@@ -1,5 +1,7 @@
 # LG webOS Binding
 
+This is a fork of the official LG WebOS Binding with additional channels for remote control (see chapter channels).
+
 The binding integrates LG WebOS based smart TVs.
 This binding uses a [forked version](https://github.com/sprehn/Connect-SDK-Java-Core) of LG's [Connect SDK](https://github.com/ConnectSDK/Connect-SDK-Android-Core) library.
 
@@ -50,6 +52,15 @@ Please note that at least one channel must be bound to an item before the bindin
 | mediaPlayer     | Player    | Media control player                                                                                                                                                                                                    | W          |
 | mediaStop       | Switch    | Media control stop                                                                                                                                                                                                      | W          |
 | appLauncher     | String    | Application ID of currently running application. This also allows to start applications on the TV by sending a specific Application ID to this channel.                                                                 | RW         |
+|-----------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| keyHome         | Switch    | Press home key                                                                                                                                                                                                          | W          |
+| keyLeft         | Switch    | Press left key                                                                                                                                                                                                          | W          |
+| keyRight        | Switch    | Press right key                                                                                                                                                                                                         | W          |
+| keyUp           | Switch    | Press up key                                                                                                                                                                                                            | W          |
+| keyDown         | Switch    | Press down key                                                                                                                                                                                                          | W          |
+| keyBack         | Switch    | Press back key                                                                                                                                                                                                          | W          |
+| keyOk           | Switch    | Press ok key                                                                                                                                                                                                            | W          |
+
 
 ## Example
 
@@ -75,11 +86,20 @@ Dimmer LG_TV0_Volume "Volume [%S]"           { channel="lgwebos:WebOSTV:3aab9eea
 Number LG_TV0_VolDummy "VolumeUpDown"
 Number LG_TV0_ChannelNo "Channel [%d]"       { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:channel" }
 Number LG_TV0_ChannelDummy "ChannelUpDown"
+Number  LG_TV0_KeyDummySpecial "SpecialKeys" 
+Number  LG_TV0_KeyDummyArrow "ArrowKeys" 
 String LG_TV0_Channel "Channel [%S]"         { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:channelName"}
 String LG_TV0_Toast                          { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:toast"}
 Switch LG_TV0_Stop "Stop"                    { autoupdate="false", channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:mediaStop" }
 String LG_TV0_Application "Application [%s]" { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:appLauncher"}
 Player LG_TV0_Player                         { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:mediaPlayer"}
+Switch  LG_TV0_Ok "Ok"                       { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyOk", autoupdate="false" }
+Switch  LG_TV0_Home "Home"                   { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyHome", autoupdate="false" }
+Switch  LG_TV0_Up "Up"                       { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyUp", autoupdate="false" }
+Switch  LG_TV0_Down "Down"                   { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyDown", autoupdate="false" }
+Switch  LG_TV0_Left "Left"                   { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyLeft", autoupdate="false" }
+Switch  LG_TV0_Right "Right"                 { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyRight", autoupdate="false" }
+Switch  LG_TV0_Back  "Back"                  { channel="lgwebos:WebOSTV:3aab9eea-953b-4272-bdbd-f0cd0ecf4a46:keyBack", autoupdate="false" }
 
 // this assumes you also have the wake on lan binding configured and your TV's IP address is on this network - You would need to update your broadcast and mac address accordingly
 Switch LG_TV0_WOL                            { wol="192.168.2.255#3c:cd:93:c2:20:e0" }
@@ -99,6 +119,8 @@ sitemap demo label="Main Menu"
         Switch item=LG_TV0_ChannelDummy icon="television" label="Kanal" mappings=[1="▲", 0="▼"]
         Text item=LG_TV0_Channel
         Default item=LG_TV0_Player
+        Switch  item=LG_TV0_KeyDummySpecial mappings=[0="\u2302", 1="OK", 2="\u21FD"]
+        Switch  item=LG_TV0_KeyDummyArrow   mappings=[0="\u2190", 1="\u2193", 2="\u2191", 3="\u2192"]        
         Text item=LG_TV0_Application
         Selection item=LG_TV0_Application mappings=[
             "com.webos.app.livetv"="TV",
@@ -149,6 +171,31 @@ then
         case 1: LG_TV0_ChannelNo.sendCommand(INCREASE)
     }
 end
+
+// for special keys
+rule "LG_TV0_KeyDummySpecial"
+when Item LG_TV0_KeyDummySpecial received command
+then
+    switch receivedCommand{
+        case 0: LG_TV0_Home.sendCommand(ON)
+        case 1: LG_TV0_Ok.sendCommand(ON)
+        case 2: LG_TV0_Back.sendCommand(ON)
+    }
+    LG_TV0_KeyDummySpecial.postUpdate(NULL)
+end
+
+// for arrow keys
+rule "LG_TV0_KeyDummyArrow"
+when Item LG_TV0_KeyDummyArrow received command
+then
+    switch receivedCommand{
+        case 0: LG_TV0_Left.sendCommand(ON)
+        case 1: LG_TV0_Down.sendCommand(ON)
+        case 2: LG_TV0_Up.sendCommand(ON)
+        case 3: LG_TV0_Right.sendCommand(ON)
+    }
+    LG_TV0_KeyDummyArrow.postUpdate(NULL)
+end
 ```
 
 
@@ -157,3 +204,4 @@ Example of a toast message.
 ```
 LG_TV0_Toast.sendCommand("Hello World")
 ```
+
