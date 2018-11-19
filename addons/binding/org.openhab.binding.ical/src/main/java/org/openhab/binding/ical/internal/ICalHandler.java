@@ -8,6 +8,9 @@
  */
 package org.openhab.binding.ical.internal;
 
+import static java.time.ZoneId.systemDefault;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.eclipse.smarthome.core.library.types.OnOffType.*;
 import static org.openhab.binding.ical.internal.ICalBindingConstants.*;
 
 import java.io.IOException;
@@ -16,18 +19,15 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -37,12 +37,13 @@ import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
+import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import biweekly.Biweekly;
 import biweekly.ICalendar;
-import biweekly.component.VEvent;
 
 /**
  * The {@link ICalHandler} is responsible for handling commands, which are
@@ -54,10 +55,13 @@ import biweekly.component.VEvent;
 public class ICalHandler extends BaseThingHandler {
     private static final long ONE_DAY_IN_SECONDS = 24 * 60 * 60L;
     private final Logger logger = LoggerFactory.getLogger(ICalHandler.class);
-    @Nullable
-    private ICalendar iCalendar;
-    @Nullable
-    private ScheduledFuture<?> refreshJob;
+    private List<VEventAdapter> events = new ArrayList<>();
+    private Optional<VEventAdapter> nextEvent = Optional.empty();
+    private Optional<VEventAdapter> currentEvent = Optional.empty();
+    private Optional<ScheduledFuture<?>> job = Optional.empty();
+    private Optional<ScheduledFuture<?>> notificationJob = Optional.empty();
+    private Optional<ScheduledFuture<?>> startJob = Optional.empty();
+    private Optional<ScheduledFuture<?>> endJob = Optional.empty();
 
     public ICalHandler(Thing thing) {
         super(thing);
@@ -67,7 +71,7 @@ public class ICalHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
             if (CHANNEL_NEXT_EVENT.equals(channelUID.getId())) {
-                updateChannelNextEvent();
+                updateChannelNextEventSummery();
             } else if (CHANNEL_NEXT_EVENT_START.equals(channelUID.getId())) {
                 updateChannelNextEventStart();
             } else if (CHANNEL_NEXT_EVENT_END.equals(channelUID.getId())) {
@@ -76,90 +80,146 @@ public class ICalHandler extends BaseThingHandler {
                 updateChannelNextEventEnd();
             } else if (CHANNEL_NEXT_EVENT_NOTIFICATION_DATE.equals(channelUID.getId())) {
                 updateChannelNextEventNotificationDate();
+            } else if (CHANNEL_CURRENT_EVENT.equals(channelUID.getId())) {
+                updateChannelCurrentEventSummery();
+            } else if (CHANNEL_CURRENT_EVENT_START.equals(channelUID.getId())) {
+                updateChannelCurrentEventStart();
+            } else if (CHANNEL_CURRENT_EVENT_END.equals(channelUID.getId())) {
+                updateChannelCurrentEventEnd();
+            } else if (CHANNEL_CURRENT_EVENT_DESCRIPTION.equals(channelUID.getId())) {
+                updateChannelCurrentEventDescription();
             }
         }
     }
 
-    private void updateChannelNextEvent() {
-        updateState(CHANNEL_NEXT_EVENT,
-                getNextEvent().map(VEvent::getSummary).map(s -> s.getValue()).map(StringType::new).orElse(null));
+    private void updateChannelNextEventSummery() {
+        updateState(CHANNEL_NEXT_EVENT, nextEvent.flatMap(VEventAdapter::getSummary).map(StringType::new)
+                .map(d -> (State) d).orElse(UnDefType.NULL));
+    }
+
+    private void updateChannelCurrentEventSummery() {
+        updateState(CHANNEL_CURRENT_EVENT, currentEvent.flatMap(VEventAdapter::getSummary).map(StringType::new)
+                .map(d -> (State) d).orElse(UnDefType.NULL));
+    }
+
+    private void updateChannelCurrentEventStart() {
+        Optional<ZonedDateTime> dateTime = currentEvent.flatMap(VEventAdapter::getStart);
+        updateState(CHANNEL_CURRENT_EVENT_START,
+                dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
+    }
+
+    private void updateChannelCurrentEventEnd() {
+        Optional<ZonedDateTime> dateTime = currentEvent.flatMap(VEventAdapter::getEnd);
+        updateState(CHANNEL_CURRENT_EVENT_END,
+                dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
+    }
+
+    private void updateChannelCurrentEventDescription() {
+        updateState(CHANNEL_CURRENT_EVENT_DESCRIPTION, currentEvent.flatMap(VEventAdapter::getDescription)
+                .map(StringType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
     private void updateChannelNextEventStart() {
-        updateState(CHANNEL_NEXT_EVENT_START, getNextEventStart().map(DateTimeType::new).orElse(null));
+        Optional<ZonedDateTime> dateTime = nextEvent.flatMap(VEventAdapter::getStart);
+        updateState(CHANNEL_NEXT_EVENT_START,
+                dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
     private void updateChannelNextEventEnd() {
-        updateState(CHANNEL_NEXT_EVENT_END, getNextEventEnd().map(DateTimeType::new).orElse(
-                getNextEventStart().map(v -> v.plusHours(23).plusMinutes(59)).map(DateTimeType::new).orElse(null)));
+        Optional<ZonedDateTime> dateTime = nextEvent.flatMap(VEventAdapter::getEnd);
+        updateState(CHANNEL_NEXT_EVENT_END, dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
     private void updateChannelNextEventDescription() {
-        updateState(CHANNEL_NEXT_EVENT_DESCRIPTION,
-                getNextEvent().map(VEvent::getDescription).map(s -> s.getValue()).map(StringType::new).orElse(null));
+        updateState(CHANNEL_NEXT_EVENT_DESCRIPTION, nextEvent.flatMap(VEventAdapter::getDescription)
+                .map(StringType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
     private void updateChannelNextEventNotificationDate() {
-        updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_DATE, getNextEventStart()
-                .map(v -> v.minusSeconds(getNextEventNotificationDateOffset())).map(DateTimeType::new).orElse(null));
+        Optional<ZonedDateTime> dateTime = nextEvent.flatMap(VEventAdapter::getNotification);
+        updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_DATE,
+                dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
-    public Optional<ZonedDateTime> getNextEventEnd() {
-        return getNextEvent().map(VEvent::getDateEnd).map(v -> v.getValue())
-                .map(v -> v.toInstant().atZone(ZoneId.systemDefault()));
-    }
-
-    public Optional<ZonedDateTime> getNextEventStart() {
-        return getNextEvent().map(VEvent::getDateStart).map(v -> v.getValue())
-                .map(v -> v.toInstant().atZone(ZoneId.systemDefault()));
-    }
-
-    public Optional<VEvent> getNextEvent() {
-        if (iCalendar != null) {
-            List<VEvent> sortedEvents = new ArrayList<>(iCalendar.getEvents());
-            Collections.sort(sortedEvents, new VEventComparator());
-            final Date now = new Date();
-            return sortedEvents.stream().filter(e -> e.getDateStart().getValue().after(now)).findFirst();
+    private void scheduleNextEvent() {
+        ZonedDateTime now = ZonedDateTime.now(systemDefault());
+        notificationJob.ifPresent(j -> j.cancel(false));
+        startJob.ifPresent(j -> j.cancel(false));
+        endJob.ifPresent(j -> j.cancel(false));
+        if (nextEvent.isPresent() && nextEvent.get().isNotificationAfter(now)) {
+            notificationJob = Optional.of(scheduler.schedule(() -> updateNextEvent(),
+                    nextEvent.get().getNotificationInSeconds(now), SECONDS));
         }
-        return Optional.empty();
+        if (nextEvent.isPresent() && nextEvent.get().isStartAfter(now)) {
+            startJob = Optional
+                    .of(scheduler.schedule(() -> updateNextEvent(), nextEvent.get().getStartInSeconds(now), SECONDS));
+        }
+        if (currentEvent.isPresent() && currentEvent.get().isEndAfter(now)) {
+            endJob = Optional
+                    .of(scheduler.schedule(() -> updateNextEvent(), currentEvent.get().getEndInSeconds(now), SECONDS));
+        } else if (nextEvent.isPresent() && nextEvent.get().isEndAfter(now)) {
+            endJob = Optional
+                    .of(scheduler.schedule(() -> updateNextEvent(), nextEvent.get().getEndInSeconds(now), SECONDS));
+        }
     }
 
     @Override
     public void initialize() {
         logger.debug("Start initializing!");
         updateStatus(ThingStatus.UNKNOWN);
-        scheduler.execute(() -> {
-            updateCalendar();
-            if (refreshJob == null || refreshJob.isCancelled()) {
-                refreshJob = scheduler.scheduleWithFixedDelay(this::update, 10, getRefreshInterval(), TimeUnit.SECONDS);
-            }
-        });
-        logger.debug("Finished initializing!");
+        job = Optional
+                .of(scheduler.scheduleAtFixedRate(() -> updateCalendar(), 0, getRefreshInterval(), TimeUnit.SECONDS));
     }
 
     @Override
     public void dispose() {
-        if (refreshJob != null && !refreshJob.isCancelled()) {
-            refreshJob.cancel(true);
-            refreshJob = null;
-        }
+        job.ifPresent(j -> j.cancel(true));
+        notificationJob.ifPresent(j -> j.cancel(true));
+        startJob.ifPresent(j -> j.cancel(true));
+        endJob.ifPresent(j -> j.cancel(true));
     }
 
-    private void update() {
-        updateCalendar();
-        updateChannelNextEvent();
+    private void updateNextEvent() {
+        ZonedDateTime now = ZonedDateTime.now(systemDefault());
+        nextEvent = events.stream().filter(e -> e.isStartAfter(now)).findFirst();
+        currentEvent = events.stream().filter(e -> e.isEndAfter(now) && !e.isStartAfter(now)).findFirst();
+        if (currentEvent.isPresent()) {
+            updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_SWITCH, OFF);
+            updateState(CHANNEL_NEXT_EVENT_SWITCH, ON);
+        } else if (nextEvent.isPresent() && !nextEvent.get().isNotificationAfter(now)) {
+            updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_SWITCH, ON);
+            updateState(CHANNEL_NEXT_EVENT_SWITCH, OFF);
+        } else {
+            updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_SWITCH, OFF);
+            updateState(CHANNEL_NEXT_EVENT_SWITCH, OFF);
+        }
+        // System.out
+        // .println(getThing().getChannel(CHANNEL_NEXT_EVENT_NOTIFICATION_DATE).getAcceptedItemType());
+
+        updateChannelCurrentEventSummery();
+        updateChannelCurrentEventStart();
+        updateChannelCurrentEventEnd();
+        updateChannelCurrentEventDescription();
+        updateChannelNextEventSummery();
         updateChannelNextEventStart();
         updateChannelNextEventEnd();
         updateChannelNextEventDescription();
         updateChannelNextEventNotificationDate();
+        scheduleNextEvent();
     }
 
     private void updateCalendar() {
         try {
+            logger.info("updateCalendar");
             URL url = new URL(getUrl());
             URLConnection connection = url.openConnection();
             try (InputStream inputStream = connection.getInputStream()) {
-                iCalendar = Biweekly.parse(inputStream).first();
+                ICalendar iCalendar = Biweekly.parse(inputStream).first();
+                events.clear();
+                iCalendar.getEvents()
+                        .forEach(e -> events.add(new VEventAdapter(e, getNextEventNotificationDateOffset())));
+                Collections.sort(events);
+                updateNextEvent();
                 updateStatus(ThingStatus.ONLINE);
             }
         } catch (MalformedURLException e) {

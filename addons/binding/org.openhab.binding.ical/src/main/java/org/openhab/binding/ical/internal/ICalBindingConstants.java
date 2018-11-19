@@ -26,11 +26,17 @@ public class ICalBindingConstants {
     public static final ThingTypeUID THING_TYPE_CALENDAR = new ThingTypeUID(BINDING_ID, "calendar");
 
     // List of all Channel ids
+    public static final String CHANNEL_CURRENT_EVENT = "currentEvent";
+    public static final String CHANNEL_CURRENT_EVENT_START = "currentEventStart";
+    public static final String CHANNEL_CURRENT_EVENT_END = "currentEventEnd";
+    public static final String CHANNEL_CURRENT_EVENT_DESCRIPTION = "currentEventDescription";
     public static final String CHANNEL_NEXT_EVENT = "nextEvent";
+    public static final String CHANNEL_NEXT_EVENT_SWITCH = "nextEventSwitch";
     public static final String CHANNEL_NEXT_EVENT_START = "nextEventStart";
     public static final String CHANNEL_NEXT_EVENT_END = "nextEventEnd";
     public static final String CHANNEL_NEXT_EVENT_DESCRIPTION = "nextEventDescription";
     public static final String CHANNEL_NEXT_EVENT_NOTIFICATION_DATE = "nextEventNotificationDate";
+    public static final String CHANNEL_NEXT_EVENT_NOTIFICATION_SWITCH = "nextEventNotificationSwitch";
 
     public static final String CONFIG_PARAMETER_URL = "url";
     public static final String CONFIG_PARAMETER_REFRESH = "refreshInterval";

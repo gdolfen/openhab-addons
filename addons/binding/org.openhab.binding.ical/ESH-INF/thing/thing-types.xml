@@ -10,11 +10,17 @@
 		<description>The thing represents an ICal-Calendar</description>
 
 		<channels>
+		    <channel id="currentEvent" typeId="CurrentEventType" />
+		    <channel id="currentEventStart" typeId="CurrentEventStartType" />
+		    <channel id="currentEventEnd" typeId="CurrentEventEndType" />
+		    <channel id="currentEventDescription" typeId="CurrentEventDescriptionType" />
 			<channel id="nextEvent" typeId="NextEventType" />
 			<channel id="nextEventDescription" typeId="NextEventDescriptionType" />
 			<channel id="nextEventNotificationDate" typeId="NextEventNotificationDateType" />
 			<channel id="nextEventStart" typeId="NextEventStartType" />
 			<channel id="nextEventEnd" typeId="NextEventEndType" />
+			<channel id="nextEventSwitch" typeId="nextEventSwitchType" />
+			<channel id="nextEventNotificationSwitch" typeId="nextEventNotificationSwitchType" />
 		</channels>
 
 		<config-description>
@@ -35,6 +41,26 @@
 	</thing-type>
 
 	<!-- Channel Types -->
+    <channel-type id="CurrentEventType">
+        <item-type>String</item-type>
+        <label>Current event</label>
+        <description>Current event in the calendar</description>
+    </channel-type>
+    <channel-type id="CurrentEventStartType">
+        <item-type>DateTime</item-type>
+        <label>Current event start</label>
+        <description>Current event start in the calendar</description>
+    </channel-type>
+    <channel-type id="CurrentEventEndType">
+        <item-type>DateTime</item-type>
+        <label>Current event end</label>
+        <description>Current event end in the calendar</description>
+    </channel-type>  
+    <channel-type id="CurrentEventDescriptionType">
+        <item-type>String</item-type>
+        <label>Current event description</label>
+        <description>Current event description in the calendar</description>
+    </channel-type>             	
     <channel-type id="NextEventType">
         <item-type>String</item-type>
         <label>Next event</label>
@@ -59,5 +85,15 @@
         <item-type>DateTime</item-type>
         <label>Next event end</label>
         <description>Next event end in the calendar</description>
-    </channel-type>         
+    </channel-type>
+    <channel-type id="nextEventSwitchType">
+        <item-type>Switch</item-type>
+        <label>Next event started</label>
+        <description>Next event started in the calendar</description>
+    </channel-type> 
+    <channel-type id="nextEventNotificationSwitchType">
+        <item-type>Switch</item-type>
+        <label>Next event notification occured</label>
+        <description>Next event notification occured in the calendar</description>
+    </channel-type>              
 </thing:thing-descriptions>

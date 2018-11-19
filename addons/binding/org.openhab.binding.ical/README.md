@@ -28,13 +28,19 @@ The following thing configurations are available:
 
 ## Channels
 
-| Channel Type ID           | Item Type | Description                                           | Read/Write |
-|---------------------------|-----------|-------------------------------------------------------|------------|
-| nextEvent                 | Text      | Next event in the calendar.                           | R          |
-| nextEventDescription      | Text      | Next event description in the calendar.               | R          |
-| nextEventNotificationDate | DateTime  | Notification date for the next event in the calendar. | R          |
-| nextEventStart            | DateTime  | Next event start in the calendar.                     | R          |
-| nextEventEnd              | DateTime  | Next event end in the calendar.                       | R          |
+| Channel Type ID             | Item Type | Description                                           | Read/Write |
+|-----------------------------|-----------|-------------------------------------------------------|------------|
+| currentEvent                | Text      | Current event in the calendar.                        | R          |
+| currentEventDescription     | Text      | Current event description in the calendar.            | R          |
+| currentEventStart           | DateTime  | Current event start in the calendar.                  | R          |
+| currentEventEnd             | DateTime  | Current event end in the calendar.                    | R          |
+| nextEvent                   | Text      | Next event in the calendar.                           | R          |
+| nextEventDescription        | Text      | Next event description in the calendar.               | R          |
+| nextEventNotificationDate   | DateTime  | Notification date for the next event in the calendar. | R          |
+| nextEventStart              | DateTime  | Next event start in the calendar.                     | R          |
+| nextEventEnd                | DateTime  | Next event end in the calendar.                       | R          |
+| nextEventNotificationSwitch | Switch    | Switch is set ON after reaching notification date.    | R          |
+| nextEventSwitch             | Switch    | Switch is set ON after reaching next start date.      | R          |
 
 ## Full Example
 
