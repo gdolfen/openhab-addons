@@ -10,6 +10,7 @@
 		<description>The thing represents an ICal-Calendar</description>
 
 		<channels>
+		    <channel id="lastUpdate" typeId="LastUpdateType" />
 		    <channel id="currentEvent" typeId="CurrentEventType" />
 		    <channel id="currentEventStart" typeId="CurrentEventStartType" />
 		    <channel id="currentEventEnd" typeId="CurrentEventEndType" />
@@ -28,9 +29,9 @@
                 <label>URL Address</label>
                 <description>The URL of the iCal-File</description>
             </parameter>		
-            <parameter name="refreshInterval" type="integer" required="false">
-                <label>Refresh interval</label>
-                <description>Time for refreshing the iCal-File in seconds (default=86400s)</description>
+            <parameter name="updateInterval" type="integer" required="false">
+                <label>Update interval</label>
+                <description>Time for updating the iCal-File in seconds (default=86400s)</description>
             </parameter>
             <parameter name="nextEventNotificationDateOffset" type="integer" required="false">
                 <label>Event notification start offset</label>
@@ -41,6 +42,11 @@
 	</thing-type>
 
 	<!-- Channel Types -->
+    <channel-type id="LastUpdateType">
+        <item-type>DateTime</item-type>
+        <label>Last update</label>
+        <description>Last update of the calendar</description>
+    </channel-type>	
     <channel-type id="CurrentEventType">
         <item-type>String</item-type>
         <label>Current event</label>

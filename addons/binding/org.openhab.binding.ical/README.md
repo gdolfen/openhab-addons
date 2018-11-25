@@ -30,6 +30,7 @@ The following thing configurations are available:
 
 | Channel Type ID             | Item Type | Description                                           | Read/Write |
 |-----------------------------|-----------|-------------------------------------------------------|------------|
+| lastUpdate                  | DateTime  | Last update of the calendar.                          | R          |
 | currentEvent                | Text      | Current event in the calendar.                        | R          |
 | currentEventDescription     | Text      | Current event description in the calendar.            | R          |
 | currentEventStart           | DateTime  | Current event start in the calendar.                  | R          |

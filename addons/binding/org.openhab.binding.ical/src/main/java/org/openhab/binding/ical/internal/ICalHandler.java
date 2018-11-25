@@ -38,6 +38,7 @@ import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.types.TypeParser;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,7 @@ public class ICalHandler extends BaseThingHandler {
     private Optional<ScheduledFuture<?>> notificationJob = Optional.empty();
     private Optional<ScheduledFuture<?>> startJob = Optional.empty();
     private Optional<ScheduledFuture<?>> endJob = Optional.empty();
+    private Optional<ZonedDateTime> lastUpdate = Optional.empty();
 
     public ICalHandler(Thing thing) {
         super(thing);
@@ -88,6 +90,8 @@ public class ICalHandler extends BaseThingHandler {
                 updateChannelCurrentEventEnd();
             } else if (CHANNEL_CURRENT_EVENT_DESCRIPTION.equals(channelUID.getId())) {
                 updateChannelCurrentEventDescription();
+            } else if (CHANNEL_LAST_UPDATE.equals(channelUID.getId())) {
+                updateChannelLastUpdate();
             }
         }
     }
@@ -106,6 +110,10 @@ public class ICalHandler extends BaseThingHandler {
         Optional<ZonedDateTime> dateTime = currentEvent.flatMap(VEventAdapter::getStart);
         updateState(CHANNEL_CURRENT_EVENT_START,
                 dateTime.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
+    }
+
+    private void updateChannelLastUpdate() {
+        updateState(CHANNEL_LAST_UPDATE, lastUpdate.map(DateTimeType::new).map(d -> (State) d).orElse(UnDefType.NULL));
     }
 
     private void updateChannelCurrentEventEnd() {
@@ -166,9 +174,10 @@ public class ICalHandler extends BaseThingHandler {
     @Override
     public void initialize() {
         logger.debug("Start initializing!");
+        TypeParser.parseType("OnOffType", "ON");
         updateStatus(ThingStatus.UNKNOWN);
         job = Optional
-                .of(scheduler.scheduleAtFixedRate(() -> updateCalendar(), 0, getRefreshInterval(), TimeUnit.SECONDS));
+                .of(scheduler.scheduleAtFixedRate(() -> updateCalendar(), 0, getUpdateInterval(), TimeUnit.SECONDS));
     }
 
     @Override
@@ -193,9 +202,6 @@ public class ICalHandler extends BaseThingHandler {
             updateState(CHANNEL_NEXT_EVENT_NOTIFICATION_SWITCH, OFF);
             updateState(CHANNEL_NEXT_EVENT_SWITCH, OFF);
         }
-        // System.out
-        // .println(getThing().getChannel(CHANNEL_NEXT_EVENT_NOTIFICATION_DATE).getAcceptedItemType());
-
         updateChannelCurrentEventSummery();
         updateChannelCurrentEventStart();
         updateChannelCurrentEventEnd();
@@ -219,6 +225,8 @@ public class ICalHandler extends BaseThingHandler {
                 iCalendar.getEvents()
                         .forEach(e -> events.add(new VEventAdapter(e, getNextEventNotificationDateOffset())));
                 Collections.sort(events);
+                lastUpdate = Optional.of(ZonedDateTime.now(systemDefault()));
+                updateChannelLastUpdate();
                 updateNextEvent();
                 updateStatus(ThingStatus.ONLINE);
             }
@@ -242,8 +250,8 @@ public class ICalHandler extends BaseThingHandler {
                 .orElse(ONE_DAY_IN_SECONDS);
     }
 
-    public long getRefreshInterval() {
-        Object value = thing.getConfiguration().get(CONFIG_PARAMETER_REFRESH);
+    public long getUpdateInterval() {
+        Object value = thing.getConfiguration().get(CONFIG_PARAMETER_UPDATE);
         return Optional.ofNullable(value).map(BigDecimal.class::cast).map(BigDecimal::longValue)
                 .orElse(ONE_DAY_IN_SECONDS);
     }
