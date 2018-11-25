@@ -13,8 +13,11 @@ Bundle-Version: 2.4.0.qualifier
 Import-Package: 
  org.eclipse.jdt.annotation;resolution:=optional,
  org.eclipse.smarthome.config.core,
+ org.eclipse.smarthome.core.items,
  org.eclipse.smarthome.core.library.types,
+ org.eclipse.smarthome.core.library.items,
  org.eclipse.smarthome.core.thing,
+ org.eclipse.smarthome.core.net,
  org.eclipse.smarthome.core.thing.binding,
  org.eclipse.smarthome.core.thing.binding.builder,
  org.eclipse.smarthome.core.thing.type,

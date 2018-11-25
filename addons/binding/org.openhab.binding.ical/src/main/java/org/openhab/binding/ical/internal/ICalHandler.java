@@ -28,6 +28,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.smarthome.core.items.ItemRegistry;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -38,7 +39,6 @@ import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
-import org.eclipse.smarthome.core.types.TypeParser;
 import org.eclipse.smarthome.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +64,11 @@ public class ICalHandler extends BaseThingHandler {
     private Optional<ScheduledFuture<?>> startJob = Optional.empty();
     private Optional<ScheduledFuture<?>> endJob = Optional.empty();
     private Optional<ZonedDateTime> lastUpdate = Optional.empty();
+    private CommandHandler commandHandler;
 
-    public ICalHandler(Thing thing) {
+    public ICalHandler(Thing thing, ItemRegistry itemRegistry) {
         super(thing);
+        this.commandHandler = new CommandHandler(itemRegistry);
     }
 
     @Override
@@ -160,7 +162,7 @@ public class ICalHandler extends BaseThingHandler {
         }
         if (nextEvent.isPresent() && nextEvent.get().isStartAfter(now)) {
             startJob = Optional
-                    .of(scheduler.schedule(() -> updateNextEvent(), nextEvent.get().getStartInSeconds(now), SECONDS));
+                    .of(scheduler.schedule(() -> startNextEvent(), nextEvent.get().getStartInSeconds(now), SECONDS));
         }
         if (currentEvent.isPresent() && currentEvent.get().isEndAfter(now)) {
             endJob = Optional
@@ -174,7 +176,6 @@ public class ICalHandler extends BaseThingHandler {
     @Override
     public void initialize() {
         logger.debug("Start initializing!");
-        TypeParser.parseType("OnOffType", "ON");
         updateStatus(ThingStatus.UNKNOWN);
         job = Optional
                 .of(scheduler.scheduleAtFixedRate(() -> updateCalendar(), 0, getUpdateInterval(), TimeUnit.SECONDS));
@@ -186,6 +187,11 @@ public class ICalHandler extends BaseThingHandler {
         notificationJob.ifPresent(j -> j.cancel(true));
         startJob.ifPresent(j -> j.cancel(true));
         endJob.ifPresent(j -> j.cancel(true));
+    }
+
+    private void startNextEvent() {
+        nextEvent.get().getDescription().ifPresent(d -> commandHandler.sendCommand(d));
+        updateNextEvent();
     }
 
     private void updateNextEvent() {
